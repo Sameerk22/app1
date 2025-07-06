@@ -1,0 +1,10 @@
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore VSCode / PyCharm settings
+.vscode/
+.idea/
+
+# Ignore secrets
+.streamlit/secrets.toml

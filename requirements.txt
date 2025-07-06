@@ -1,0 +1,6 @@
+streamlit
+python-docx
+aiohttp
+tqdm
+openai
+pdfservices-sdk
