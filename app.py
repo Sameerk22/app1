@@ -100,9 +100,18 @@ async def translate_docx_async(docx_path, output_path, language, progress_callba
         if not original or not is_meaningful_text(original) or is_decorative_only(original):
             i += 1
             continue
-        if len(original.split()) <= 3 and not original.isupper():
+
+        # Detect likely heading
+        is_heading = para.style.name.lower().startswith("heading") or para.alignment == 1
+
+        # Skip short lines unless they are uppercase or likely a heading
+        if len(original.split()) <= 3 and not original.isupper() and not is_heading:
             i += 1
             continue
+    
+        # if len(original.split()) <= 3 and not original.isupper():
+        #     i += 1
+        #     continue
 
         prompt = PROMPT_TEMPLATE.format(chunk=original, language=language)
         jobs.append((i, para, prompt))
