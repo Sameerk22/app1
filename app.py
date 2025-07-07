@@ -4,6 +4,7 @@ import time
 import asyncio
 import aiohttp
 import streamlit as st
+from tqdm.asyncio import tqdm_asyncio
 from docx import Document
 from tempfile import NamedTemporaryFile
 from tqdm.asyncio import tqdm_asyncio
@@ -66,7 +67,8 @@ async def call_openai_gpt(session, prompt, semaphore):
                 await asyncio.sleep(RETRY_DELAY)
     return None
 
-from tqdm.asyncio import tqdm_asyncio
+
+
 
 async def call_with_progress(session, idx, prompt, semaphore, results, counter, lock, total, progress_callback):
     result = await call_openai_gpt(session, prompt, semaphore)
@@ -121,6 +123,14 @@ async def translate_docx_async(docx_path, output_path, language, progress_callba
 
     for (i, para, _), translated in zip(jobs, results):
         if translated:
+            if translated.startswith('"""') and translated.endswith('"""'):
+                translated = translated[3:-3].strip()
+            elif translated.startswith('"""'):
+                translated = translated[3:].strip()
+            elif translated.endswith('"""'):
+                translated = translated[:-3].strip()
+
+
             for run in para.runs:
                 run.text = ""
             if para.runs:
@@ -130,6 +140,74 @@ async def translate_docx_async(docx_path, output_path, language, progress_callba
 
     doc.save(output_path)
     print(f"\n✅ Translated file saved to: {output_path}")
+
+
+
+# async def translate_docx_async(docx_path, output_path, language, progress_callback=None):
+#     doc = Document(docx_path)
+#     paragraphs = doc.paragraphs
+#     semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+#     jobs = []
+
+#     i = 0
+#     while i < len(paragraphs):
+#         para = paragraphs[i]
+#         original = para.text.strip()
+
+#         if re.fullmatch(r"[A-Z]", original) and i + 1 < len(paragraphs) and paragraphs[i + 1].text.strip()[:1].isupper():
+#             p = para._element
+#             p.getparent().remove(p)
+#             paragraphs = doc.paragraphs
+#             continue
+
+#         if not original or not is_meaningful_text(original) or is_decorative_only(original):
+#             i += 1
+#             continue
+#         if len(original.split()) <= 3 and not original.isupper():
+#             i += 1
+#             continue
+
+#         prompt = PROMPT_TEMPLATE.format(chunk=original, language=language)
+#         jobs.append((i, para, prompt))
+#         i += 1
+
+#     async with aiohttp.ClientSession() as session:
+
+
+        
+# #         #Only bar
+# #         # results = []
+# #         # total = len(jobs)
+# #         # for idx, (i, para, prompt) in enumerate(jobs):
+# #         #     translated = await call_openai_gpt(session, prompt, semaphore)
+# #         #     results.append(translated)
+# #         #     if progress_callback:
+# #         #         progress_callback((idx + 1) / total)
+
+#         # OLD One
+#         results = await tqdm_asyncio.gather(
+#             *[call_openai_gpt(session, prompt, semaphore) for (_, _, prompt) in jobs]
+#         )
+
+#     for (i, para, _), translated in zip(jobs, results):
+#         if translated:
+#             if translated.startswith('"""') and translated.endswith('"""'):
+#                 translated = translated[3:-3].strip()
+#             elif translated.startswith('"""'):
+#                 translated = translated[3:].strip()
+#             elif translated.endswith('"""'):
+#                 translated = translated[:-3].strip()
+
+
+#             for run in para.runs:
+#                 run.text = ""
+#             if para.runs:
+#                 para.runs[0].text = translated
+#             else:
+#                 para.add_run(translated)
+
+#     doc.save(output_path)
+#     return output_path
 
 # --- Streamlit UI ---
 st.title("📘 Easy Translate: Manuscript Translator")
