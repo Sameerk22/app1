@@ -66,12 +66,24 @@ async def call_openai_gpt(session, prompt, semaphore):
                 await asyncio.sleep(RETRY_DELAY)
     return None
 
-async def translate_docx_async(docx_path, output_path, language):
+from tqdm.asyncio import tqdm_asyncio
+
+async def call_with_progress(session, idx, prompt, semaphore, results, counter, lock, total, progress_callback):
+    result = await call_openai_gpt(session, prompt, semaphore)
+    results[idx] = result
+
+    async with lock:
+        counter[0] += 1
+        pct = counter[0] / total
+        if progress_callback:
+            progress_callback(pct)
+
+async def translate_docx_async(docx_path, output_path, language, progress_callback=None):
     doc = Document(docx_path)
     paragraphs = doc.paragraphs
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
-    jobs = []
 
+    jobs = []
     i = 0
     while i < len(paragraphs):
         para = paragraphs[i]
@@ -94,9 +106,17 @@ async def translate_docx_async(docx_path, output_path, language):
         jobs.append((i, para, prompt))
         i += 1
 
+    total = len(jobs)
+    results = [None] * total
+    lock = asyncio.Lock()
+    counter = [0]
+
     async with aiohttp.ClientSession() as session:
-        results = await tqdm_asyncio.gather(
-            *[call_openai_gpt(session, prompt, semaphore) for (_, _, prompt) in jobs]
+        await tqdm_asyncio.gather(
+            *[
+                call_with_progress(session, idx, prompt, semaphore, results, counter, lock, total, progress_callback)
+                for idx, (_, _, prompt) in enumerate(jobs)
+            ]
         )
 
     for (i, para, _), translated in zip(jobs, results):
@@ -109,7 +129,7 @@ async def translate_docx_async(docx_path, output_path, language):
                 para.add_run(translated)
 
     doc.save(output_path)
-    return output_path
+    print(f"\n✅ Translated file saved to: {output_path}")
 
 # --- Streamlit UI ---
 st.title("📘 Easy Translate: Manuscript Translator")
@@ -134,9 +154,19 @@ if uploaded_file:
         docx_path = input_path
 
     if st.button("🚀 Translate Now"):
+        progress_bar = st.progress(0)
+
+        def update_progress(pct):
+            progress_bar.progress(pct)
+
         with st.spinner("Translating..."):
-            asyncio.run(translate_docx_async(docx_path, output_path, target_language))
+            asyncio.run(translate_docx_async(docx_path, output_path, target_language, update_progress))
+
+        progress_bar.empty()
+        # with st.spinner("Translating..."):
+        #     asyncio.run(translate_docx_async(docx_path, output_path, target_language))
         st.success("Translation completed!")
+        st.empty() 
 
         with open(output_path, "rb") as f:
             st.download_button("📥 Download Translated DOCX", f, file_name="translated.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
