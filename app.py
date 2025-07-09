@@ -101,15 +101,34 @@ async def translate_docx_async(docx_path, output_path, language, progress_callba
             i += 1
             continue
 
-        # Detect likely heading
+#---------------------------------------------------------------------
+        word_count = len(original.split())
         is_heading = para.style.name.lower().startswith("heading") or para.alignment == 1
 
+        # Skip short lines unless clearly uppercase or marked as a heading
+        if word_count <= 4:
+            if not original.isupper() and not is_heading:
+                i += 1
+                continue
+            elif is_heading and language.lower() == "contemporary english":
+                # Use a simple heading-specific prompt
+                prompt = f"Rewrite this heading in contemporary English, keeping it short and clear:\n\"\"\"\n{original}\n\"\"\""
+                jobs.append((i, para, prompt))
+                i += 1
+                continue
+#---------------------------------------------------------------------
+        # Detect likely heading
+        # is_heading = para.style.name.lower().startswith("heading") or para.alignment == 1
+
+        
+
         # Skip short lines unless they are uppercase or likely a heading
-        if len(original.split()) <= 3 and not original.isupper() and not is_heading:
-            i += 1
-            continue
+        #OLD ONe
+        # if len(original.split()) <= 4 and not original.isupper() and not is_heading:
+        #     i += 1
+        #     continue
     
-        # if len(original.split()) <= 3 and not original.isupper():
+        # if len(original.split()) <= 4 and not original.isupper():
         #     i += 1
         #     continue
 
