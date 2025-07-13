@@ -101,7 +101,7 @@ async def translate_docx_async(docx_path, output_path, language, progress_callba
             i += 1
             continue
 
-#---------------------------------------------------------------------
+
         word_count = len(original.split())
         is_heading = para.style.name.lower().startswith("heading") or para.alignment == 1
 
@@ -116,21 +116,7 @@ async def translate_docx_async(docx_path, output_path, language, progress_callba
                 jobs.append((i, para, prompt))
                 i += 1
                 continue
-#---------------------------------------------------------------------
-        # Detect likely heading
-        # is_heading = para.style.name.lower().startswith("heading") or para.alignment == 1
 
-        
-
-        # Skip short lines unless they are uppercase or likely a heading
-        #OLD ONe
-        # if len(original.split()) <= 4 and not original.isupper() and not is_heading:
-        #     i += 1
-        #     continue
-    
-        # if len(original.split()) <= 4 and not original.isupper():
-        #     i += 1
-        #     continue
 
         prompt = PROMPT_TEMPLATE.format(chunk=original, language=language)
         jobs.append((i, para, prompt))
@@ -170,73 +156,6 @@ async def translate_docx_async(docx_path, output_path, language, progress_callba
     print(f"\n✅ Translated file saved to: {output_path}")
 
 
-
-# async def translate_docx_async(docx_path, output_path, language, progress_callback=None):
-#     doc = Document(docx_path)
-#     paragraphs = doc.paragraphs
-#     semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
-#     jobs = []
-
-#     i = 0
-#     while i < len(paragraphs):
-#         para = paragraphs[i]
-#         original = para.text.strip()
-
-#         if re.fullmatch(r"[A-Z]", original) and i + 1 < len(paragraphs) and paragraphs[i + 1].text.strip()[:1].isupper():
-#             p = para._element
-#             p.getparent().remove(p)
-#             paragraphs = doc.paragraphs
-#             continue
-
-#         if not original or not is_meaningful_text(original) or is_decorative_only(original):
-#             i += 1
-#             continue
-#         if len(original.split()) <= 3 and not original.isupper():
-#             i += 1
-#             continue
-
-#         prompt = PROMPT_TEMPLATE.format(chunk=original, language=language)
-#         jobs.append((i, para, prompt))
-#         i += 1
-
-#     async with aiohttp.ClientSession() as session:
-
-
-        
-# #         #Only bar
-# #         # results = []
-# #         # total = len(jobs)
-# #         # for idx, (i, para, prompt) in enumerate(jobs):
-# #         #     translated = await call_openai_gpt(session, prompt, semaphore)
-# #         #     results.append(translated)
-# #         #     if progress_callback:
-# #         #         progress_callback((idx + 1) / total)
-
-#         # OLD One
-#         results = await tqdm_asyncio.gather(
-#             *[call_openai_gpt(session, prompt, semaphore) for (_, _, prompt) in jobs]
-#         )
-
-#     for (i, para, _), translated in zip(jobs, results):
-#         if translated:
-#             if translated.startswith('"""') and translated.endswith('"""'):
-#                 translated = translated[3:-3].strip()
-#             elif translated.startswith('"""'):
-#                 translated = translated[3:].strip()
-#             elif translated.endswith('"""'):
-#                 translated = translated[:-3].strip()
-
-
-#             for run in para.runs:
-#                 run.text = ""
-#             if para.runs:
-#                 para.runs[0].text = translated
-#             else:
-#                 para.add_run(translated)
-
-#     doc.save(output_path)
-#     return output_path
-
 # --- Streamlit UI ---
 st.title("📘 Easy Translate: Manuscript Translator")
 uploaded_file = st.file_uploader("Upload a .docx or .pdf manuscript", type=["pdf", "docx"])
@@ -250,7 +169,11 @@ if uploaded_file:
         temp_input.flush()
         input_path = temp_input.name
 
-    output_path = "translated_output.docx"
+    # output_path = "translated_output.docx"
+    base_name = os.path.splitext(uploaded_file.name)[0]  # Original filename without extension
+    lang_suffix = target_language.lower().replace(" ", "_")  # e.g. "contemporary_english"
+    final_filename = f"{base_name}_{lang_suffix}.docx"
+    output_path = os.path.join(".", final_filename)  # Optional path control
 
     if ext == ".pdf":
         with st.spinner("🔄 Converting PDF to DOCX using Adobe..."):
@@ -269,10 +192,9 @@ if uploaded_file:
             asyncio.run(translate_docx_async(docx_path, output_path, target_language, update_progress))
 
         progress_bar.empty()
-        # with st.spinner("Translating..."):
-        #     asyncio.run(translate_docx_async(docx_path, output_path, target_language))
+      
         st.success("Translation completed!")
         st.empty() 
 
         with open(output_path, "rb") as f:
-            st.download_button("📥 Download Translated DOCX", f, file_name="translated.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            st.download_button("📥 Download Translated DOCX", f, file_name=final_filename, mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
