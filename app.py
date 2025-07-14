@@ -106,7 +106,7 @@ async def translate_docx_async(docx_path, output_path, language, progress_callba
         is_heading = para.style.name.lower().startswith("heading") or para.alignment == 1
 
         # Skip short lines unless clearly uppercase or marked as a heading
-        if word_count <= 4:
+        if word_count <= 1:
             if not original.isupper() and not is_heading:
                 i += 1
                 continue
