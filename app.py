@@ -31,6 +31,7 @@ So do not skip translating any sentence line-by-line into {language} and do not 
 This is crucial: When you encounter general terminology such as "chapter," "the end," etc., or phrases that are widely used across books, do not vary or rephrase them—this is to ensure consistency.
 Always use the most widely accepted or officially published book title, chapter name, or term if multiple synonyms are possible — e.g., use Meditations, not Reflections; Letters from a Stoic, not Stoic Letters.
 Also, always choose the most commonly published or recognized title or term in the target language — e.g., De Gedaanteverwisseling, not Metamorfose in Dutch.
+Only give the exact translation; do not answer anything else, such as “Here’s a concise, modern rewrite,” etc.
 
 Original Passage:
 \"\"\"
