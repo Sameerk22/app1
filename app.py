@@ -11,7 +11,8 @@ from tqdm.asyncio import tqdm_asyncio
 from pdf_utils import convert_pdf_to_docx_adobe  # <-- You must have this script locally
 
 # --- CONFIGURATION ---
-OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+# OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+OPENROUTER_API_KEY = st.secrets["OPENROUTER_API_KEY"]
 PDF_SERVICES_CLIENT_ID = st.secrets["PDF_SERVICES_CLIENT_ID"]
 PDF_SERVICES_CLIENT_SECRET = st.secrets["PDF_SERVICES_CLIENT_SECRET"]
 
@@ -48,14 +49,40 @@ def is_decorative_only(text):
     stripped = text.strip()
     return not stripped or re.fullmatch(r"[^\w\s]+", stripped) or re.fullmatch(r"[A-Z]", stripped)
 
+# async def call_openai_gpt(session, prompt, semaphore):
+#     url = "https://api.openai.com/v1/chat/completions"
+#     headers = {
+#         "Authorization": f"Bearer {OPENAI_API_KEY}",
+#         "Content-Type": "application/json"
+#     }
+#     payload = {
+#         "model": MODEL,
+#         "messages": [{"role": "user", "content": prompt}],
+#         "temperature": 0.7
+#     }
+
+#     for attempt in range(MAX_RETRIES):
+#         async with semaphore:
+#             try:
+#                 async with session.post(url, headers=headers, json=payload) as resp:
+#                     resp.raise_for_status()
+#                     data = await resp.json()
+#                     return data["choices"][0]["message"]["content"].strip()
+#             except Exception as e:
+#                 await asyncio.sleep(RETRY_DELAY)
+#     return None
+
+
 async def call_openai_gpt(session, prompt, semaphore):
-    url = "https://api.openai.com/v1/chat/completions"
+    url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "Content-Type": "application/json"
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://yourdomain.com",  # Optional but recommended
+        "X-Title": "EasyTranslate"                # Optional but helpful for tracking
     }
     payload = {
-        "model": MODEL,
+        "model": "anthropic/claude-sonnet-4",  # Update below based on your chosen model
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.7
     }
