@@ -16,7 +16,7 @@ OPENROUTER_API_KEY = st.secrets["OPENROUTER_API_KEY"]
 PDF_SERVICES_CLIENT_ID = st.secrets["PDF_SERVICES_CLIENT_ID"]
 PDF_SERVICES_CLIENT_SECRET = st.secrets["PDF_SERVICES_CLIENT_SECRET"]
 
-MODEL = "gpt-4.1"
+# MODEL = "gpt-4.1"
 MAX_RETRIES = 3
 RETRY_DELAY = 5
 MAX_CONCURRENT_REQUESTS = 5
@@ -84,7 +84,7 @@ async def call_openai_gpt(session, prompt, semaphore):
     payload = {
         "model": "anthropic/claude-sonnet-4",  # Update below based on your chosen model
         "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.7
+        "temperature": 0.1
     }
 
     for attempt in range(MAX_RETRIES):
